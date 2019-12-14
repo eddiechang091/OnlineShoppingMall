@@ -19,7 +19,7 @@ import javax.servlet.http.HttpSession;
 public class UserController {
     private IUserService iUserService;
     /**
-     * 用户登录
+     * User Login
      * @param username
      * @param password
      * @param session
@@ -35,20 +35,83 @@ public class UserController {
         }
         return response;
     }
+
+    /**
+     * User Logout
+     * @param session
+     * @return
+     */
     @RequestMapping(value = "logout.do",method = RequestMethod.GET)
     @ResponseBody
     public ServerResponse<String> logout(HttpSession session){
         session.removeAttribute(Const.CURRENT_USER);
         return ServerResponse.createBySuccessMessage("成功登出!");
     }
+
+    /**
+     * Register
+     * @param user
+     * @return
+     */
     @RequestMapping(value = "register.do",method = RequestMethod.POST)
     @ResponseBody
     public ServerResponse<String> register(User user){
+
         return iUserService.register(user);
     }
+
+    /**
+     * Check data validation
+     * @param str
+     * @param type
+     * @return
+     */
     @RequestMapping(value = "check_valid.do",method = RequestMethod.POST)
     @ResponseBody
     public ServerResponse<String> checkValid(String str,String type){
+
         return iUserService.checkValid(str,type);
     }
+
+    /**
+     * Get User Info
+     * @param session
+     * @return
+     */
+    @RequestMapping(value = "get_user_info.do",method = RequestMethod.GET)
+    @ResponseBody
+    public ServerResponse<User> getUserInfo(HttpSession session){
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if (user!= null){
+            return  ServerResponse.createBySuccess(user);
+        }
+        return ServerResponse.createByErrorMessage("该用户未登陆！无法获取当前用户的信息");
+    }
+
+    /**
+     * Forget password and use username to get hint question
+     * @param username
+     * @return
+     */
+    @RequestMapping(value = "forget_get_question.do",method = RequestMethod.GET)
+    @ResponseBody
+    public ServerResponse<String> forgetGetQuestion(String username){
+        return iUserService.selectQuestion(username);
+
+    }
+
+    /**
+     * Check Question Answer
+     * @param username
+     * @param question
+     * @param answer
+     * @return
+     */
+    @RequestMapping(value = "forget_check_answer.do",method = RequestMethod.GET)
+    @ResponseBody
+    public ServerResponse<String> forgetCheckAnswer(String username,String question,String answer){
+        return  iUserService.checkAnswer(username,question,answer);
+    }
+
+
 }
