@@ -7,6 +7,7 @@ import com.mmall.dao.UserMapper;
 import com.mmall.pojo.User;
 import com.mmall.service.IUserService;
 import com.mmall.util.MD5Util;
+import com.sun.corba.se.spi.activation.Server;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -93,9 +94,47 @@ public class UserServiceImpl implements IUserService {
         if (resultCount>0){
             //说明问题和问题答案是这个用户的，并且回答正确
             String forgetToken = UUID.randomUUID().toString();
-            TokenCache.setKey("token_"+username,forgetToken);
+            TokenCache.setKey(TokenCache.TOKEN_PREFIX+username,forgetToken);
             return ServerResponse.createBySuccess(forgetToken);
         }
         return ServerResponse.createByErrorMessage("问题的答案错误！");
+    }
+
+    public ServerResponse<String> forgetResetPassword(String username,String passwordNew,String forgetToken){
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(forgetToken)){
+            return ServerResponse.createByErrorMessage("参数错误，Token 需要传递！");
+        }
+        ServerResponse<String> validResponse = this.checkValid(username,Const.USERNAME);
+        if (validResponse.isSuccess()){
+            return ServerResponse.createByErrorMessage("该用户名不存在！");
+        }
+        String token = TokenCache.getKey(TokenCache.TOKEN_PREFIX+username);
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(token)){
+            return ServerResponse.createByErrorMessage("Token 无效或者过期");
+        }
+        if (org.apache.commons.lang3.StringUtils.equals(forgetToken,token)){
+            String md5Password = MD5Util.MD5EncodeUtf8(passwordNew);
+            int rowCount = userMapper.updatePasswordByUsername(username,md5Password);
+            if(rowCount>0){
+                return ServerResponse.createByErrorMessage("修改密码成功！");
+            }
+        }else{
+            return ServerResponse.createByErrorMessage("token 错误，请重新获取重置密码的token!");
+        }
+        return ServerResponse.createByErrorMessage("修改密码失败");
+    }
+
+    public ServerResponse<String>resetPassword(String passwordOld,String passwordNew,User user){
+        //防止横向越权
+        int resultCount = userMapper.checkPassword(MD5Util.MD5EncodeUtf8(passwordOld),user.getId());
+        if (resultCount==0){
+            return ServerResponse.createByErrorMessage("旧密码错误");
+        }
+        user.setPassword(MD5Util.MD5EncodeUtf8(passwordNew));
+        int updateCount = userMapper.updateByPrimaryKeySelective(user);
+        if (updateCount>0){
+            return ServerResponse.createBySuccessMessage("密码更新成功!");
+        }
+        return ServerResponse.createByErrorMessage("密码更新失败！");
     }
 }
