@@ -1,9 +1,11 @@
 package com.mmall.controller.portal;
 
 import com.mmall.common.Const;
+import com.mmall.common.ResponseCode;
 import com.mmall.common.ServerResponse;
 import com.mmall.pojo.User;
 import com.mmall.service.IUserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -17,6 +19,7 @@ import javax.servlet.http.HttpSession;
 @Controller
 @RequestMapping("/user/")
 public class UserController {
+    @Autowired
     private IUserService iUserService;
     /**
      * User Login
@@ -134,6 +137,32 @@ public class UserController {
         }
         return iUserService.resetPassword(passwordOld,passwordNew,user);
     }
+    @RequestMapping(value = "update_information.do",method = RequestMethod.POST)
+    @ResponseBody
+    public ServerResponse<User> update_information(HttpSession session,User user){
+            User currentUser = (User) session.getAttribute(Const.CURRENT_USER);
+            if (currentUser == null){
+                return ServerResponse.createByErrorMessage("用户未登陆！");
+            }
+            user.setId(currentUser.getId());
+            user.setUsername(currentUser.getUsername());
+            user.setRole(currentUser.getRole());
+            ServerResponse<User> response = iUserService.updateInformation(user);
+            if (response.isSuccess()){
+                session.setAttribute(Const.CURRENT_USER,response.getData());
+            }
+            return response;
 
+    }
+    @RequestMapping(value = "get_information.do",method = RequestMethod.POST)
+    @ResponseBody
+    public ServerResponse<User> get_information(HttpSession session){
+        User currentUser = (User) session.getAttribute(Const.CURRENT_USER);
+        if (currentUser == null){
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(),"未登录，需要强制登录status=10");
+        }
+        return iUserService.getInformation(currentUser.getId());
+
+    }
 
 }
