@@ -3,6 +3,7 @@ package com.mmall.controller.backend;
 import com.mmall.common.Const;
 import com.mmall.common.ResponseCode;
 import com.mmall.common.ServerResponse;
+import com.mmall.pojo.Category;
 import com.mmall.pojo.User;
 import com.mmall.service.ICategoryService;
 import com.mmall.service.IUserService;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpSession;
+import java.util.List;
 
 /**
  * Created by Lenovo on 2019/12/26.
@@ -40,7 +42,7 @@ public class CategoryManageController {
         if (user == null) {
             return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(), "用户未登录，请登录！");
         }
-        //校验是否为管理员
+        //Check if it is admin
         if (!iUserService.checkAdminRole(user).isSuccess()) {
             return ServerResponse.createByErrorMessage("不是管理员，不能操作！");
         } else {
@@ -57,10 +59,40 @@ public class CategoryManageController {
         if (!iUserService.checkAdminRole(user).isSuccess()) {
             return ServerResponse.createByErrorMessage("不是管理员，不能操作！");
         } else {
-            //更新Category Name
+            //Update Category Name
             return iCategoryService.setCategoryName(categoryId,categoryName);
         }
         }
+    @RequestMapping("get_category.do")
+    @ResponseBody
+    public ServerResponse<List<Category>> findCategoryParallelList(HttpSession session,@RequestParam(value="categoryId",defaultValue = "0") Integer categoryId){
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if (user == null) {
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(), "用户未登录，请登录！");
+        }
+        if (!iUserService.checkAdminRole(user).isSuccess()) {
+            return ServerResponse.createByErrorMessage("不是管理员，不能操作！");
+        } else {
+            //Find Category parallel nodes
+            return iCategoryService.findCategoryParallelList(categoryId);
+        }
+    }
+
+    @RequestMapping("get_deep_category.do")
+    @ResponseBody
+    public ServerResponse<List<Integer>> findCategoryAndDeepChildrenList(HttpSession session,@RequestParam(value="categoryId",defaultValue = "0") Integer categoryId) {
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if (user == null) {
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(), "用户未登录，请登录！");
+        }
+        if (!iUserService.checkAdminRole(user).isSuccess()) {
+            return ServerResponse.createByErrorMessage("不是管理员，不能操作！");
+        } else {
+            //find parent node and its child nodes
+            return iCategoryService.findCategoryAndDeepChildrenList(categoryId);
+        }
+    }
+
 
 
 
