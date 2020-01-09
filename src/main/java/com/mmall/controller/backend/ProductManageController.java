@@ -50,4 +50,18 @@ public class ProductManageController {
         return ServerResponse.createByErrorMessage("不是管理员，没有权限登陆！");
 
     }
+
+    @RequestMapping("detail.do")
+    @ResponseBody
+    public ServerResponse getDetail(HttpSession session,Integer productId, Integer status){
+        User user = (User)session.getAttribute(Const.CURRENT_USER);
+        if(user == null){
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(),"用户未登陆，请以管理员身份登陆！");
+        }
+        if (iUserService.checkAdminRole(user).isSuccess()){
+            return iProductService.manageProductDetail(productId);
+        }
+        return ServerResponse.createByErrorMessage("不是管理员，没有权限登陆！");
+
+    }
 }
